@@ -1,0 +1,92 @@
+scheme: http
+issuer: https://dev-ch4mpy.eu.auth0.com/
+client-id: IXsKNJQv9muepAVzh4mD8beDdVyqQFo7
+client-secret: change-me
+
+server:
+  port: 7084
+  ssl:
+    enabled: false
+        
+logging:
+  level:
+    org:
+      springframework:
+        cloud: TRACE
+        boot: INFO
+        security: INFO
+        web: INFO
+
+---
+spring:
+  config:
+    activate:
+      on-profile: client-credentials
+  cloud:
+    openfeign:
+      client:
+        config:
+          auth0-api:
+            url: ${issuer}api/v2
+      oauth2:
+        enabled: true
+        clientRegistrationId: auth0-backend
+  security:
+    oauth2:
+      client:
+        provider:
+          auth0:
+            issuer-uri: ${issuer}
+        registration:
+          auth0-backend:
+            provider: auth0
+            authorization-grant-type: client_credentials
+            client-id: ${client-id}
+            client-secret: ${client-secret}
+            scope: read:users
+com:
+  c4-soft:
+    springaddons:
+      oidc:
+        ops:
+        - iss: ${issuer}
+        client:
+          token-request-params:
+            auth0-backend:
+            - name: audience
+              value: https://dev-ch4mpy.eu.auth0.com/api/v2/
+        resourceserver:
+          permit-all:
+          - /**
+
+---
+spring:
+  config:
+    activate:
+      on-profile: bearer-forward
+  cloud:
+    openfeign:
+      client:
+        config:
+          auth0-api:
+            url: ${issuer}api/v2
+            request-interceptors:
+            - com.c4soft.feign.JwtForwardingRequestInterceptor
+com:
+  c4-soft:
+    springaddons:
+      oidc:
+        ops:
+        - iss: ${issuer}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: ssl
+
+scheme: https
+
+server:
+  ssl:
+    enabled: true
